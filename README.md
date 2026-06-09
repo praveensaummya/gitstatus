@@ -513,6 +513,19 @@ cd gitstatus
 If everything goes well, the newly built binary will appear in `./usrbin`. It'll be picked up
 by shell bindings automatically.
 
+### Termux (Android)
+
+On Android/Termux, prebuilt Linux binaries may be incompatible. This repository includes a helper
+script to build `gitstatusd` in Termux. From the repository root run:
+
+```sh
+bash scripts/termux-build.sh "$PWD" "$HOME/local"
+```
+
+The script installs required packages (ask for confirmation), builds a patched `libgit2` and
+compiles `gitstatusd` into `./usrbin`. After a successful build, set `GITSTATUS_DAEMON` to
+`/path/to/gitstatus/usrbin/gitstatusd` or let the installer detect it automatically.
+
 When you update shell bindings, they may refuse to work with the binary you've built earlier. In
 this case you'll need to rebuild.
 
