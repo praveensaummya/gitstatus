@@ -44,21 +44,28 @@ echo "Building gitstatusd in $REPO_DIR"
 cd "$REPO_DIR"
 
 # Extract version from build.info
-local version=
+version=
 if [ -f build.info ]; then
-  version="$(grep '^gitstatus_version=' build.info | cut -d= -f2)"
+  . ./build.info
+  version="$gitstatus_version"
 fi
 
 make clean || true
 make CXX=clang++ \
      CXXFLAGS="-I$PREFIX/include${version:+ -DGITSTATUS_VERSION=$version}" \
      LDFLAGS="-L$PREFIX/lib" \
-     LDLIBS="-lgit2 -lcrypto -lssl -lz -lunwind"
+     LDLIBS="-lgit2 -lcrypto -lssl -lz -lunwind" \
+     -j"$(nproc)"
+
+install -d "$PREFIX/bin"
+install -m 755 "$REPO_DIR/usrbin/gitstatusd" "$PREFIX/bin/gitstatusd"
 
 echo
 echo "Build finished. If successful, the binary is at: $REPO_DIR/usrbin/gitstatusd"
+echo "Installed copy to: $PREFIX/bin/gitstatusd"
 echo "To run from Termux (example):"
-echo "  export GITSTATUS_DAEMON=\"$REPO_DIR/usrbin/gitstatusd\""
+echo "  export PATH=\"$PREFIX/bin:\$PATH\""
+echo "  export GITSTATUS_DAEMON=\"$PREFIX/bin/gitstatusd\""
 echo "  bash -ic 'cd \"$REPO_DIR\" && source ./gitstatus.plugin.sh && gitstatus_start -t 5'"
 
 exit 0
