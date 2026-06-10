@@ -42,9 +42,16 @@ export LD_LIBRARY_PATH="$PREFIX/lib:${LD_LIBRARY_PATH:-}"
 # Build gitstatusd
 echo "Building gitstatusd in $REPO_DIR"
 cd "$REPO_DIR"
+
+# Extract version from build.info
+local version=
+if [ -f build.info ]; then
+  version="$(grep '^gitstatus_version=' build.info | cut -d= -f2)"
+fi
+
 make clean || true
 make CXX=clang++ \
-     CXXFLAGS="-I$PREFIX/include" \
+     CXXFLAGS="-I$PREFIX/include${version:+ -DGITSTATUS_VERSION=$version}" \
      LDFLAGS="-L$PREFIX/lib" \
      LDLIBS="-lgit2 -lcrypto -lssl -lz -lunwind"
 

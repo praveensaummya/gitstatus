@@ -522,9 +522,49 @@ script to build `gitstatusd` in Termux. From the repository root run:
 bash scripts/termux-build.sh "$PWD" "$HOME/local"
 ```
 
-The script installs required packages (ask for confirmation), builds a patched `libgit2` and
-compiles `gitstatusd` into `./usrbin`. After a successful build, set `GITSTATUS_DAEMON` to
-`/path/to/gitstatus/usrbin/gitstatusd` or let the installer detect it automatically.
+The script:
+- Installs required Termux packages
+- Builds a patched `libgit2` from `romkatv/libgit2`
+- Compiles `gitstatusd` with the correct version flag
+- Produces the binary in `./usrbin`
+
+After a successful build, set `GITSTATUS_DAEMON` to point to it:
+
+```sh
+export GITSTATUS_DAEMON="$HOME/gitstatus/usrbin/gitstatusd"
+source "$HOME/gitstatus/gitstatus.plugin.zsh"
+gitstatus_start -t 5 MY
+```
+
+Or add to `~/.zshrc` to auto-start gitstatus in every shell.
+
+```sh
+export GITSTATUS_DAEMON="$HOME/gitstatus/usrbin/gitstatusd"
+source "$HOME/gitstatus/gitstatus.plugin.zsh"
+gitstatus_stop MY 2>/dev/null || true
+gitstatus_start -t 5 MY
+```
+
+**Manual build (if not using the helper script):**
+
+```sh
+# Build libgit2 first
+git clone https://github.com/romkatv/libgit2.git ~/libgit2
+cd ~/libgit2 && mkdir build && cd build
+cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF -DBUILD_CLAR=OFF -DUSE_SSH=OFF -DCMAKE_INSTALL_PREFIX="$HOME/local" ..
+make -j$(nproc) && make install
+
+# Build gitstatus
+export PKG_CONFIG_PATH="$HOME/local/lib/pkgconfig:${PKG_CONFIG_PATH:-}"
+export LD_LIBRARY_PATH="$HOME/local/lib:${LD_LIBRARY_PATH:-}"
+cd ~/gitstatus
+make clean
+make CXX=clang++ \
+     CXXFLAGS="-I$HOME/local/include -DGITSTATUS_VERSION=v1.5.5" \
+     LDFLAGS="-L$HOME/local/lib" \
+     LDLIBS="-lgit2 -lcrypto -lssl -lz -lunwind" \
+     -j8
+```
 
 When you update shell bindings, they may refuse to work with the binary you've built earlier. In
 this case you'll need to rebuild.
